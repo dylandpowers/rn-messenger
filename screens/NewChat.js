@@ -1,54 +1,87 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { View, StyleSheet } from 'react-native';
-import { Appbar, TextInput, FAB } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Appbar, Searchbar, List } from 'react-native-paper';
 
-function NewChat({ route, navigation }) {
-  const [recipientId, setRecipientId] = useState('');
-  const [messageText, setMessageText] = useState('');
+import { setChatRecipient } from '../redux/chatRecipient';
+import { firestore } from '../persistence/firebase';
+import { FlatList } from 'react-native-gesture-handler';
+
+function NewChat({ navigation }) {
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const currentUser = useSelector(state => state.user);
+  const dispatch = useDispatch();
+
+  const [dataHolder, setDataHolder] = useState([]); // for searching
+
+  useEffect(() => {
+    firestore.collection('users')
+      .get()
+      .then((querySnapshot) => {
+        const fetchedUsers = [];
+        querySnapshot.forEach((querySnapshot) => {
+          if (querySnapshot.id !== currentUser.id) {
+            fetchedUsers.push(querySnapshot);
+          }
+        });
+        setUsers(fetchedUsers);
+        setDataHolder(fetchedUsers);
+        setIsLoading(false);
+      }).catch((err) => {
+        setIsError(true);
+      });
+  }, []);
+
+  function filterData(searchText) {
+    const newUserData = dataHolder.filter(user => {
+      const userData = user.data();
+      const userName = `${userData.firstName.toUpperCase()} ${userData.lastName.toUpperCase()}`;
+      const searchTextUpperCase = searchText.toUpperCase();
+
+      return userName.indexOf(searchTextUpperCase) > -1;
+    });
+
+    setUsers(newUserData);
+  }
 
   function back() {
     navigation.goBack();
   }
 
-  function onSendMessage() {
-    navigation.state.params.newMessage({ sender: currentUser, recipientId, messageText });
-    back();
+  function onSelectRecipient(recipient) {
+    dispatch(setChatRecipient(recipient));
+    navigation.navigate('SingleChat');
   }
 
   return (
     <>
       <Appbar.Header style={styles.headerContainer}>
         <Appbar.BackAction onPress={back} />
-        <Appbar.Content title='New Message' />
+        <Appbar.Content title='Select Recipient' />
       </Appbar.Header>
       <View style={styles.container}>
-        <TextInput
-          label='Send message to...'
-          value={recipientId}
-          mode='outlined'
-          onChangeText={setRecipientId}
-          style={styles.titleText}
+        <Searchbar
+          placeholder='Search'
+          onChangeText={text => filterData(text)}
         />
-        <TextInput
-          label='Message'
-          value={messageText}
-          onChangeText={setMessageText}
-          mode='flat'
-          multiline={true}
-          style={styles.messageText}
-          scrollEnabled={true}
-          returnKeyType='done'
-          blurOnSubmit={true}
+        {isLoading ? (
+          <View style={styles.activityIndicatorContainer}>
+            <ActivityIndicator />
+          </View>
+        )  : ( 
+        <FlatList
+          data={users}
+          renderItem={({ item }) => 
+            <List.Item
+              title={item.data().firstName + ' ' + item.data().lastName}
+              onPress={() => onSelectRecipient(item)}
+            />
+          }
+          keyExtractor={item => item.id.toString()}
         />
-        <FAB
-          icon='check'
-          small
-          style={styles.fab}
-          disabled={messageText === '' || recipientId === ''}
-          onPress={onSendMessage}
-        />
+        )}
       </View>
     </>
   );
@@ -63,20 +96,10 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: '#ccccff'
   },
-  titleText: {
-    fontSize: 20
-  },
-  messageText: {
-    height: 300,
-    fontSize: 16
-  },
-  fab: {
-    position: 'absolute',
-    margin: 20,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#ccccff'
+  activityIndicatorContainer: {
+    flex: 1,
+    justifyContent: 'center'
   }
-})
+});
 
 export default NewChat;

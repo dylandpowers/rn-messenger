@@ -2,21 +2,23 @@ export const SIGN_IN = 'SIGN_IN';
 
 const initialState = {
   id: 'dp',
-  name: 'Dylan Powers',
+  firstName: 'Dylan',
+  lastName: 'Powers',
+  email: 'dylandpowers@gmail.com',
   avatar: "https://facebook.com"
 };
 
-export function signIn(payload) {
+export function signIn(user) {
   return {
     type: SIGN_IN,
-    payload
+    user
   }
 }
 
 export default function user(state = initialState, action) {
   switch (action.type) {
     case SIGN_IN:
-      return action.payload;
+      return action.user;
     default:
       return state;
   }

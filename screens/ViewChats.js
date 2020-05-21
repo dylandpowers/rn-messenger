@@ -11,28 +11,36 @@ import {
 } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { sendMessage as createSendMessageAction } from '../redux/messages';
+import { setChatRecipient } from '../redux/chatRecipient';
+import { getUser } from '../persistence/firebase';
 
 function ViewChats({ navigation }) {
   const messages = useSelector(state => state.messages);
   const dispatch = useDispatch();
 
-  function newMessage(message) {
-    dispatch(createSendMessageAction(message));
-  }
-
   function goToNewChatScreen() {
-    navigation.navigate('NewChat', {
-      newMessage
-    });
+    navigation.navigate('NewChat');
   }
 
   function goToSingleChat(userId) {
-
-    navigation.navigate('SingleChat', {
-      otherUser: userId,
-      conversation: messages[userId]
+    getUser(userId, documentSnapshot => {
+      dispatch(setChatRecipient(documentSnapshot));
+      navigation.navigate('SingleChat');
     });
+  }
+
+  function renderListItem({ item }) {
+    const messagesFromSender = messages[item];
+    const lastMessage = messagesFromSender.messages[0].text;
+    return (
+      <List.Item
+        title={messagesFromSender.otherUser.firstName}
+        description={lastMessage}
+        descriptionNumberOfLines={1}
+        titleStyle={styles.listTitle}
+        onPress={() => goToSingleChat(item)}
+      />
+    )
   }
 
   return (
@@ -51,22 +59,10 @@ function ViewChats({ navigation }) {
       ) : (
         <FlatList
           data={Object.keys(messages)}
-          renderItem={({ item }) => {
-            const messagesFromSender = messages[item];
-            const lastMessage = messagesFromSender[messagesFromSender.length - 1].text;
-            return (
-              <List.Item
-                title={item} // this will be the ID of the message
-                description={lastMessage}
-                descriptionNumberOfLines={1}
-                titleStyle={styles.listTitle}
-                onPress={() => goToSingleChat(item)}
-              />
-          )}}
+          renderItem={renderListItem}
           keyExtractor={item => item}
         />
       )}
-
     </>
   );
 }

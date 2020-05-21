@@ -1,29 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { StyleSheet } from 'react-native';
 import { Appbar } from 'react-native-paper';
 import { GiftedChat } from 'react-native-gifted-chat';
 
+import { sendMessage as createSendMessageAction } from '../redux/messages';
+
 function SingleChat({ navigation }) {
-  const { conversation, otherUser } = navigation.state.params;
+  const currentUser = useSelector(state => state.user);
+  const recipient = useSelector(state => state.chatRecipient);
+  const conversation = useSelector(state => state.messages[recipient.id]);
+
+  const existingMessages = typeof conversation === 'object' ? conversation.messages : [];
+  const [messages, setMessages] = useState(existingMessages);
+  const dispatch = useDispatch();
 
   function popToTop() {
     navigation.popToTop();
   }
 
-  function onSend(messages) {
-    conversation = GiftedChat.append(conversation, messages);
+  function onSend(newMessages) {
+    setMessages(GiftedChat.append(messages, newMessages)); 
+    newMessages.forEach((message) => dispatch(createSendMessageAction(recipient, message)));
   }
 
   return (
     <>
       <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={popToTop} />
-        <Appbar.Content title={otherUser} />
+        <Appbar.Content title={recipient.data().firstName} />
       </Appbar.Header>
       <GiftedChat
-        messages={conversation}
+        messages={messages}
         onSend={messages => onSend(messages)}
-        user={{ _id: 'dp' }}
+        user={{ _id: currentUser.id }}
       />
     </>
   );

@@ -22,7 +22,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
-    }
+      "supportsTablet": true,
+    },
+    "sdkVersion": "37.0.0"
   }
 }

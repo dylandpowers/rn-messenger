@@ -4,8 +4,10 @@ import { Provider as StoreProvider } from 'react-redux';
 
 import AppNavigator from './navigator';
 import store from './redux/store';
+import { initializeApp } from './persistence/firebase';
 
 export default function App() {
+  initializeApp();
   return (
     <StoreProvider store={store}>
       <PaperProvider>

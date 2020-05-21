@@ -4,9 +4,17 @@ import { createStackNavigator } from 'react-navigation-stack';
 import ViewChats from '../screens/ViewChats';
 import NewChat from '../screens/NewChat';
 import SingleChat from '../screens/SingleChat';
+import Login from '../screens/Login';
+import SignUp from '../screens/SignUp';
 
 const navigator = createStackNavigator(
   {
+    Login: {
+      screen: Login
+    },
+    SignUp: {
+      screen: SignUp
+    },
     ViewChats: {
       screen: ViewChats
     },
@@ -21,7 +29,7 @@ const navigator = createStackNavigator(
     }
   },
   {
-    initialRouteName: 'ViewChats',
+    initialRouteName: 'Login',
     headerMode: 'none'
   }
 );

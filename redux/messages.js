@@ -1,69 +1,53 @@
 export const SEND_MESSAGE = 'SEND_MESSAGE';
 export const RECEIVE_MESSAGE = 'RECEIVE_MESSAGE';
 
-let messageId = 0;
-
-export function sendMessage(payload) {
+export function sendMessage(recipient, message) {
   return {
     type: SEND_MESSAGE,
-    id: messageId++,
-    payload
+    recipient,
+    message
   };
 }
 
-export function receiveMessage(payload) {
+export function receiveMessage(sender, message) {
   return {
     type: RECEIVE_MESSAGE,
-    id: messageId++,
-    payload
+    sender,
+    message
   };
 }
 
 export default function messages(state = {}, action) {
   switch (action.type) {
     case SEND_MESSAGE:
-      const { recipientId } = action.payload;
-      if (!(recipientId in state)) {
+      const { id } = action.recipient;
+      if (!(id in state)) {
         return {
           ...state,
-          [recipientId]: [
-            _createMessageObject(action)
-          ]
+          [id]: {
+            otherUser: action.recipient.data(),
+            messages: [action.message]
+          } 
         };
       }
 
       return {
         ...state,
-        [recipientId]: [
-          ...state[recipientId],
-          _createMessageObject(action)
-        ]
+        [id]: {
+          ...state[id],
+          messages: [action.message, ...state[id].messages]
+        }
       };
     case RECEIVE_MESSAGE:
-      const senderId = action.payload.sender.id;
+      const senderId = action.sender.id;
       return {
         ...state,
         [senderId]: [
           ...state[senderId],
-          _createMessageObject(action)
+          action.message
         ]
       };
     default:
       return state;
   }
-}
-
-function _createMessageObject(action) {
-  const { sender, messageText } = action.payload;
-  const id = action.id;
-  return {
-    _id: id,
-    text: messageText,
-    createAt: new Date(),
-    user: {
-      _id: sender.id,
-      name: sender.name,
-      avatar: sender.avatar || null,
-    }
-  };
 }
