@@ -2,7 +2,7 @@ import firebase from 'firebase';
 import 'firebase/firestore';
 
 var firebaseConfig = {
-  apiKey: "AIzaSyDbAIvGW1Dasyhs1Vqnpn1cme-dlUSm8x4",
+  apiKey: process.env.FIREBASE_API_KEY,
   authDomain: "messenger-clone-112c7.firebaseapp.com",
   databaseURL: "https://messenger-clone-112c7.firebaseio.com",
   projectId: "messenger-clone-112c7",
@@ -22,15 +22,15 @@ export function getUser(userId, callback) {
 
 export function signUp(email, password, firstName, lastName, callback) {
   firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        firebase.firestore().collection('users').doc(userCredential.user.uid)
-          .set({
-            firstName: firstName,
-            lastName: lastName,
-            email: email
-          })
-          .then(() => callback(userCredential.user.uid))
-          .catch((error) => alert(error.message));
-      })
-      .catch((error) => alert(error.message));
+    .then((userCredential) => {
+      firebase.firestore().collection('users').doc(userCredential.user.uid)
+        .set({
+          firstName: firstName,
+          lastName: lastName,
+          email: email
+        })
+        .then(() => callback(userCredential.user.uid))
+        .catch((error) => alert(error.message));
+    })
+    .catch((error) => alert(error.message));
 }
