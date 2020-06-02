@@ -2,11 +2,12 @@ import { createAppContainer } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
 
 import ViewChats from '../screens/ViewChats';
-import NewChat from '../screens/NewChat';
+import UserSelect from '../screens/UserSelect';
 import SingleChat from '../screens/SingleChat';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Splash from '../screens/Splash';
+import NewMessage from '../screens/NewMessage';
 
 const navigator = createStackNavigator(
   {
@@ -22,11 +23,11 @@ const navigator = createStackNavigator(
     ViewChats: {
       screen: ViewChats
     },
-    NewChat: {
-      screen: NewChat,
-      navigationOptions: {
-        mode: 'modal'
-      }
+    UserSelect: {
+      screen: UserSelect
+    },
+    NewMessage: {
+      screen: NewMessage
     },
     SingleChat: {
       screen: SingleChat

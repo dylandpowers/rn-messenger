@@ -10,32 +10,28 @@ import {
   Appbar
 } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
-
+import { setConversationId } from '../redux/conversation';
 import { setChatRecipient } from '../redux/chatRecipient';
-import { getUser } from '../persistence/firebase';
 
 function ViewChats({ navigation }) {
-  const messages = useSelector(state => state.messages);
+  const conversations = useSelector(state => state.firebase.profile.conversations);
   const dispatch = useDispatch();
 
-  function goToNewChatScreen() {
-    navigation.navigate('NewChat');
+  function goToUserSelectScreen() {
+    navigation.navigate('UserSelect');
   }
 
-  function goToSingleChat(userId) {
-    getUser(userId, documentSnapshot => {
-      dispatch(setChatRecipient(documentSnapshot));
-      navigation.navigate('SingleChat');
-    });
-  }
+  function goToSingleChat(conversation) {
+    dispatch(setConversationId(conversation.targetId));
+    dispatch(setChatRecipient(conversation.otherUser));
+    navigation.navigate('SingleChat');
+  } 
 
   function renderListItem({ item }) {
-    const messagesFromSender = messages[item];
-    const lastMessage = messagesFromSender.messages[0].text;
     return (
       <List.Item
-        title={messagesFromSender.otherUser.firstName}
-        description={lastMessage}
+        title={item.otherUser.name}
+        description={item.lastMessageText}
         descriptionNumberOfLines={1}
         titleStyle={styles.listTitle}
         onPress={() => goToSingleChat(item)}
@@ -49,18 +45,18 @@ function ViewChats({ navigation }) {
         <Appbar.Content title='Chats' />
         <Appbar.Action
           icon='cellphone-message'
-          onPress={goToNewChatScreen}
+          onPress={goToUserSelectScreen}
         />
       </Appbar.Header>
-      {messages.length === 0 ? (
+      {!conversations || conversations.length === 0 ? (
         <View style={styles.noMessagesContainer}>
           <Text style={styles.titleText}>You have no messages</Text>
         </View>
       ) : (
         <FlatList
-          data={Object.keys(messages)}
+          data={conversations}
           renderItem={renderListItem}
-          keyExtractor={item => item}
+          keyExtractor={item => item.targetId}
         />
       )}
     </>

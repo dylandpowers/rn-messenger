@@ -1,42 +1,69 @@
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
 import { StyleSheet } from 'react-native';
 import { Appbar } from 'react-native-paper';
 import { GiftedChat } from 'react-native-gifted-chat';
-
-import { sendMessage as createSendMessageAction } from '../redux/messages';
+import { useFirestoreConnect, useFirestore } from 'react-redux-firebase';
+import { useSelector } from 'react-redux';
 
 function SingleChat({ navigation }) {
-  const currentUser = useSelector(state => state.user);
-  const recipient = useSelector(state => state.chatRecipient);
-  const conversation = useSelector(state => state.messages[recipient.id]);
+  const conversationId = useSelector(state => state.conversation);
+  const chatRecipient = useSelector(state => state.chatRecipient);
+  const { uid } = useSelector(state => state.firebase.auth);
+  const { name } = useSelector(state => state.firebase.profile);
 
-  const existingMessages = typeof conversation === 'object' ? conversation.messages : [];
-  const [messages, setMessages] = useState(existingMessages);
-  const dispatch = useDispatch();
+  const firestore = useFirestore();
 
-  function popToTop() {
-    navigation.popToTop();
+  useFirestoreConnect({
+    collection: `conversations/${conversationId}/messages`,
+    storeAs: 'messages'
+  });
+
+  const messages = useSelector((state) => state.firestore.data.messages || {});
+
+  function back() {
+    navigation.navigate('ViewChats');
+  }
+
+  function getMessages() {
+    return Object.values(messages)
+      .map((message) => {
+        return {
+          ...message,
+          createdAt: message.createdAt.toDate()
+        }
+      }).reverse();
   }
 
   function onSend(newMessages) {
-    setMessages(GiftedChat.append(messages, newMessages)); 
-    newMessages.forEach((message) => dispatch(createSendMessageAction(recipient, message)));
+    newMessages.forEach((message) => {
+      firestore.collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .add(message)
+        .then((docRef) => {
+          docRef.update({
+            _id: docRef.id
+          })
+        });
+    });
   }
 
   return (
     <>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={popToTop} />
-        <Appbar.Content title={recipient.data().firstName} />
+        <Appbar.BackAction onPress={back} />
+        <Appbar.Content title={chatRecipient.name} />
       </Appbar.Header>
-      <GiftedChat
-        messages={messages}
-        onSend={messages => onSend(messages)}
-        user={{ _id: currentUser.id }}
+      <GiftedChat 
+        messages={getMessages()}
+        onSend={(newMessages) => onSend(newMessages)}
+        user={{ 
+          _id: uid,
+          name
+         }}
       />
     </>
-  );
+  ); 
 }
 
 const styles = StyleSheet.create({

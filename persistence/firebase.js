@@ -1,36 +1,26 @@
 import firebase from 'firebase';
 import 'firebase/firestore';
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_DATABASE_URL,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID
+} from 'react-native-dotenv';
 
 var firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: "messenger-clone-112c7.firebaseapp.com",
-  databaseURL: "https://messenger-clone-112c7.firebaseio.com",
-  projectId: "messenger-clone-112c7",
-  storageBucket: "messenger-clone-112c7.appspot.com",
-  messagingSenderId: "759743330712",
-  appId: "1:759743330712:web:41c5a9fc558f42581493ed"
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  databaseURL: FIREBASE_DATABASE_URL,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID
 };
 
 export function initializeApp() {
   firebase.initializeApp(firebaseConfig);
-}
-
-export function getUser(userId, callback) {
-  firebase.firestore().collection('users').doc(userId).get()
-    .then(documentSnapshot => callback(documentSnapshot));
-}
-
-export function signUp(email, password, firstName, lastName, callback) {
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      firebase.firestore().collection('users').doc(userCredential.user.uid)
-        .set({
-          firstName: firstName,
-          lastName: lastName,
-          email: email
-        })
-        .then(() => callback(userCredential.user.uid))
-        .catch((error) => alert(error.message));
-    })
-    .catch((error) => alert(error.message));
+  firebase.firestore();
 }

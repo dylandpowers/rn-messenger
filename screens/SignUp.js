@@ -1,33 +1,37 @@
 import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { View, StyleSheet } from 'react-native';
 import { Appbar, TextInput, Button } from 'react-native-paper';
+import { useFirebase } from 'react-redux-firebase';
 
-import { signIn } from '../redux/user';
-import { signUp } from '../persistence/firebase'
+import { saveCredentials } from '../persistence/localStorage';
 
 function SignUp({ navigation }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const dispatch = useDispatch();
+  const firebase = useFirebase();
 
   function back() {
     navigation.goBack();
   }
 
   function _signUp() {
-    signUp(email, password, firstName, lastName, (userId) => {
-      dispatch(signIn({
-        id: userId,
-        firstName,
-        lastName,
-        email,
-        avatar: ''
-      }));
-      goToViewChats();
-    });
+    firebase.createUser({
+      email,
+      password
+    },
+    {
+      name: `${firstName} ${lastName}`,
+      email,
+      conversations: []
+    })
+    .then(goToViewChats);
+    // .then(() => {
+    //   saveCredentials(email, password)
+    //     .then(goToViewChats)
+    //     .catch((err) => alert(err.message));
+    // });
   }
 
   function goToViewChats() {

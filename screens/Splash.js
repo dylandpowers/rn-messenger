@@ -1,25 +1,31 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useDispatch } from 'react-redux';
-import SecureStore from 'expo-secure-store'
+import * as SecureStore from 'expo-secure-store'
 
-import { getUser } from '../persistence/firebase';
-import { signIn } from '../redux/user';
+import { useFirebase } from 'react-redux-firebase';
+import { getCredentials } from '../persistence/localStorage';
 import { SECURE_STORE_CREDENTIALS } from '../persistence/DbConstants';
 
 function Splash({ navigation }) {
-  const dispatch = useDispatch();
+  const firebase = useFirebase();
 
   useEffect(() => {
-    SecureStore.getItemAsync(SECURE_STORE_CREDENTIALS)
+    getCredentials()
       .then((credentials) => {
         if (credentials) {
-          const { id, email, password } = JSON.parse(credentials);
+          const { email, password } = credentials;
+          firebase.login({
+            email,
+            password
+          })
+          .then(() => navigation.navigate('ViewChats'))
+          .catch((err) => alert(err.message));
         } else {
           navigation.navigate('Login');
         }
       })
+      .catch((err) => alert(err.message))
   }, []);
   
   return (
@@ -35,7 +41,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center'  
   },
   title: {
     fontSize: 20

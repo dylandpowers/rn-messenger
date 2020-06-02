@@ -1,15 +1,29 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button, TextInput, Appbar } from 'react-native-paper';
-
-import { initializeApp } from '../persistence/firebase';
+import { useFirebase } from 'react-redux-firebase';
+import { saveCredentials } from '../persistence/localStorage';
 
 function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const firebase = useFirebase();
 
   function goToSignUp() {
     navigation.navigate('SignUp');
+  }
+
+  function goToViewChats() {
+    navigation.navigate('ViewChats');
+  }
+
+  function signIn() {
+    firebase.login({
+      email,
+      password
+    })
+    .then(() => saveCredentials(email, password))
+    .then(goToViewChats);
   }
 
   return (
@@ -40,6 +54,7 @@ function Login({ navigation }) {
           mode='contained'
           style={styles.button}
           dark={false}
+          onPress={signIn}
         >
           Sign In
         </Button>

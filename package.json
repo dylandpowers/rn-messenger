@@ -11,7 +11,9 @@
     "@react-native-community/masked-view": "0.1.6",
     "expo": "~37.0.3",
     "expo-google-sign-in": "~8.1.0",
+    "expo-secure-store": "~8.1.0",
     "firebase": "7.9.0",
+    "mem": ">=4.0.0",
     "react": "~16.9.0",
     "react-dom": "~16.9.0",
     "react-native": "https://github.com/expo/react-native/archive/sdk-37.0.1.tar.gz",
@@ -26,8 +28,9 @@
     "react-navigation": "^4.3.9",
     "react-navigation-stack": "^2.4.0",
     "react-redux": "^7.2.0",
+    "react-redux-firebase": "^3.4.0",
     "redux": "^4.0.5",
-    "expo-secure-store": "~8.1.0"
+    "redux-firestore": "^0.13.0"
   },
   "devDependencies": {
     "babel-preset-expo": "~8.1.0",
