@@ -12,9 +12,18 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { setConversationId } from '../redux/conversation';
 import { setChatRecipient } from '../redux/chatRecipient';
+import { useFirestoreConnect } from 'react-redux-firebase';
 
 function ViewChats({ navigation }) {
-  const conversations = useSelector(state => state.firebase.profile.conversations);
+  const { uid } = useSelector((state) => state.firebase.auth);
+
+  useFirestoreConnect({
+    collection: `users/${uid}/conversations`,
+    storeAs: 'conversations'
+  });
+
+  const conversations = useSelector((state) => state.firestore.data.conversations);
+
   const dispatch = useDispatch();
 
   function goToUserSelectScreen() {
@@ -22,16 +31,17 @@ function ViewChats({ navigation }) {
   }
 
   function goToSingleChat(conversation) {
-    dispatch(setConversationId(conversation.targetId));
-    dispatch(setChatRecipient(conversation.otherUser));
+    dispatch(setConversationId(conversation));
+    dispatch(setChatRecipient(conversations[conversation].otherUser));
     navigation.navigate('SingleChat');
   } 
 
   function renderListItem({ item }) {
+    const conversation = conversations[item];
     return (
       <List.Item
-        title={item.otherUser.name}
-        description={item.lastMessageText}
+        title={conversation.otherUser.name}
+        description={conversation.lastMessageText}
         descriptionNumberOfLines={1}
         titleStyle={styles.listTitle}
         onPress={() => goToSingleChat(item)}
@@ -54,9 +64,9 @@ function ViewChats({ navigation }) {
         </View>
       ) : (
         <FlatList
-          data={conversations}
+          data={Object.keys(conversations)}
           renderItem={renderListItem}
-          keyExtractor={item => item.targetId}
+          keyExtractor={item => item}
         />
       )}
     </>

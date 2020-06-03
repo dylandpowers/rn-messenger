@@ -23,8 +23,7 @@ function SignUp({ navigation }) {
     },
     {
       name: `${firstName} ${lastName}`,
-      email,
-      conversations: []
+      email
     })
     .then(goToViewChats);
     // .then(() => {

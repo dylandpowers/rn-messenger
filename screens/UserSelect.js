@@ -54,7 +54,7 @@ function UserSelect({ navigation }) {
     createNewConversation(recipient)
       .then((conversationId) => {
         dispatch(setChatRecipient({
-          _id: recipient.id,
+          id: recipient.id,
           name: recipient.data().name
         }));
         dispatch(setConversationId(conversationId));
@@ -73,37 +73,33 @@ function UserSelect({ navigation }) {
         ]
       }).then(({ id }) => addConversationToUsers(id, recipient))
       .then((id) => resolve(id))
-      .catch((err) => reject(err.message));
+      .catch((err) => reject(err));
     });
   }
 
   async function addConversationToUsers(id, recipient) {
     return new Promise((resolve, reject) => {
       Promise.all([
-        firestore.update(`users/${uid}`, 
-        {
-          conversations: firestore.FieldValue.arrayUnion({
+        firestore.collection(`users/${uid}/conversations`)
+          .doc(id)
+          .set({
             otherUser: {
-              _id: recipient.id,
+              id: recipient.id,
               name: recipient.data().name
             },
-            targetId: id,
             lastMessageText: ''
-          })
-        }),
-        firestore.update(`users/${recipient.id}`, 
-        {
-          conversations: firestore.FieldValue.arrayUnion({
+          }),
+        firestore.collection(`users/${recipient.id}/conversations`)
+          .doc(id)
+          .set({
             otherUser: {
-              _id: uid,
+              id: uid,
               name
             },
-            targetId: id,
             lastMessageText: ''
           })
-        })
       ]).then(() => resolve(id))
-      .catch((err) => reject(err.message));
+      .catch((err) => reject(err));
     });
 
   }

@@ -1,11 +1,12 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, AppState } from 'react-native';
 import { Appbar } from 'react-native-paper';
 import { GiftedChat } from 'react-native-gifted-chat';
 import { useFirestoreConnect, useFirestore } from 'react-redux-firebase';
 import { useSelector } from 'react-redux';
 
 function SingleChat({ navigation }) {
+  const [sortedMessages, setSortedMessages] = useState([]);
   const conversationId = useSelector(state => state.conversation);
   const chatRecipient = useSelector(state => state.chatRecipient);
   const { uid } = useSelector(state => state.firebase.auth);
@@ -15,12 +16,31 @@ function SingleChat({ navigation }) {
 
   useFirestoreConnect({
     collection: `conversations/${conversationId}/messages`,
+    orderBy: 'createdAt',
     storeAs: 'messages'
   });
 
-  const messages = useSelector((state) => state.firestore.data.messages || {});
+  const messages = useSelector((state) => state.firestore.ordered.messages || {});
+
+  AppState.addEventListener('change', (state) => {
+    if (state !== 'active') {
+      saveLastMessage();
+    }
+  });
+
+  function saveLastMessage() {
+    const messageValues = Object.values(messages);
+    const lastMessageText = messageValues[messageValues.length - 1].text;
+    firestore.update(`users/${uid}/conversations/${conversationId}`, {
+      lastMessageText
+    });
+    firestore.update(`users/${chatRecipient.id}/conversations/${conversationId}`, {
+      lastMessageText
+    });
+  }
 
   function back() {
+    saveLastMessage();
     navigation.navigate('ViewChats');
   }
 
