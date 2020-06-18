@@ -7,7 +7,8 @@ import {
 import {
   Text,
   List,
-  Appbar
+  Appbar,
+  ActivityIndicator
 } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { setConversationId } from '../redux/conversation';
@@ -34,7 +35,7 @@ function ViewChats({ navigation }) {
     dispatch(setConversationId(conversation));
     dispatch(setChatRecipient(conversations[conversation].otherUser));
     navigation.navigate('SingleChat');
-  } 
+  }
 
   function renderListItem({ item }) {
     const conversation = conversations[item];
@@ -49,6 +50,29 @@ function ViewChats({ navigation }) {
     )
   }
 
+  let viewToRender;
+  if (!conversations) {
+    viewToRender = (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator style={styles.activityIndicator} />
+      </View>
+    );
+  } else if (conversations.length === 0) {
+    viewToRender = (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.titleText}>You have no messages</Text>
+      </View>
+    );
+  } else {
+    viewToRender = (
+      <FlatList
+        data={Object.keys(conversations)}
+        renderItem={renderListItem}
+        keyExtractor={item => item}
+      />
+    );
+  }
+
   return (
     <>
       <Appbar.Header style={styles.headerContainer}>
@@ -58,17 +82,7 @@ function ViewChats({ navigation }) {
           onPress={goToUserSelectScreen}
         />
       </Appbar.Header>
-      {!conversations || conversations.length === 0 ? (
-        <View style={styles.noMessagesContainer}>
-          <Text style={styles.titleText}>You have no messages</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={Object.keys(conversations)}
-          renderItem={renderListItem}
-          keyExtractor={item => item}
-        />
-      )}
+      {viewToRender}
     </>
   );
 }
@@ -81,7 +95,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     backgroundColor: '#ccccff'
   },
-  noMessagesContainer: {
+  centeredContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center'
@@ -91,6 +105,9 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     fontSize: 20
+  },
+  activityIndicator: {
+    backgroundColor: '#ccccff'
   }
 });
 

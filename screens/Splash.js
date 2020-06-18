@@ -5,7 +5,6 @@ import * as SecureStore from 'expo-secure-store'
 
 import { useFirebase } from 'react-redux-firebase';
 import { getCredentials } from '../persistence/localStorage';
-import { SECURE_STORE_CREDENTIALS } from '../persistence/DbConstants';
 
 function Splash({ navigation }) {
   const firebase = useFirebase();

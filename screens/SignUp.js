@@ -25,12 +25,11 @@ function SignUp({ navigation }) {
       name: `${firstName} ${lastName}`,
       email
     })
-    .then(goToViewChats);
-    // .then(() => {
-    //   saveCredentials(email, password)
-    //     .then(goToViewChats)
-    //     .catch((err) => alert(err.message));
-    // });
+    .then(() => {
+      saveCredentials(email, password)
+        .then(goToViewChats)
+        .catch((err) => alert(err.message));
+    });
   }
 
   function goToViewChats() {

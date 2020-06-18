@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Appbar, TextInput, FAB } from 'react-native-paper';
+import { Appbar, TextInput, FAB, ActivityIndicator } from 'react-native-paper';
 import { useFirestore } from 'react-redux-firebase';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setConversationId } from '../redux/conversation';
 
-function NewMessage({ route, navigation }) {
+function NewMessage({ navigation }) {
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const { uid } = useSelector(state => state.firebase.auth);
   const { name } = useSelector(state => state.firebase.profile);
-  const conversationId = useSelector(state => state.conversation);
+
+  const chatRecipient = useSelector(state => state.chatRecipient);
+  const dispatch = useDispatch();
+
   const firestore = useFirestore();
 
   function back() {
@@ -16,23 +22,71 @@ function NewMessage({ route, navigation }) {
   }
 
   function onSendMessage() {
-    firestore.collection('conversations')
-      .doc(conversationId)
-      .collection('messages')
-      .add({
-        text: message,
-        createdAt: new Date(),
-        user: {
-          _id: uid,
-          name
-        }
-      }).then((docRef) => {
-        docRef.update({
-          _id: docRef.id
-        });
-      }).then(() => {
-        navigation.navigate('SingleChat');
-      })
+    setIsLoading(true);
+    createNewConversationAndAddToUsers(chatRecipient)
+      .then((conversationId) => {
+        firestore.collection('conversations')
+          .doc(conversationId)
+          .collection('messages')
+          .add({
+            text: message,
+            createdAt: new Date(),
+            user: {
+              _id: uid,
+              name
+            }
+          }).then((docRef) => {
+            docRef.update({
+              _id: docRef.id
+            });
+          }).then(() => {
+            dispatch(setConversationId(conversationId));
+            navigation.navigate('SingleChat');
+          })
+      }).catch((err) => {
+        setIsLoading(false);
+        alert(err.message);
+      });
+  }
+
+  async function createNewConversationAndAddToUsers(recipient) {
+    return new Promise((resolve, reject) => {
+      firestore.add('conversations', 
+      {
+        users: [
+          firestore.collection('users').doc(uid),
+          firestore.collection('users').doc(recipient.id)
+        ]
+      }).then(({ id }) => addConversationToUsers(id, recipient))
+      .then((id) => resolve(id))
+      .catch((err) => reject(err));
+    });
+  }
+
+  async function addConversationToUsers(id, recipient) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        firestore.collection(`users/${uid}/conversations`)
+          .doc(id)
+          .set({
+            otherUser: {
+              id: recipient.id,
+              name: recipient.name
+            },
+            lastMessageText: ''
+          }),
+        firestore.collection(`users/${recipient.id}/conversations`)
+          .doc(id)
+          .set({
+            otherUser: {
+              id: uid,
+              name
+            },
+            lastMessageText: ''
+          })
+      ]).then(() => resolve(id))
+      .catch((err) => reject(err));
+    });
   }
 
   return (
@@ -41,26 +95,32 @@ function NewMessage({ route, navigation }) {
         <Appbar.BackAction onPress={back} />
         <Appbar.Content title='New Message' />
       </Appbar.Header>
-      <View style={styles.container}>
-        <TextInput
-          label='Message'
-          value={message}
-          onChangeText={setMessage}
-          style={styles.messageText}
-          mode='flat'
-          scrollEnabled={true}
-          multiline={true}
-          blurOnSubmit={true}
-          returnKeyType='send'
-        />
-        <FAB
-          icon='send'
-          small
-          style={styles.fab}
-          disabled={message === ''}
-          onPress={onSendMessage}
-        />
-      </View>
+      {isLoading ? (
+        <View style={styles.activityIndicatorContainer}>
+          <ActivityIndicator />
+        </View>
+      ) : (
+        <View style={styles.container}>
+          <TextInput
+            label='Message'
+            value={message}
+            onChangeText={setMessage}
+            style={styles.messageText}
+            mode='flat'
+            scrollEnabled={true}
+            multiline={true}
+            blurOnSubmit={true}
+            returnKeyType='send'
+          />
+          <FAB
+            icon='send'
+            small
+            style={styles.fab}
+            disabled={message === ''}
+            onPress={onSendMessage}
+          />
+        </View>
+      )}
     </>
   );
 }
@@ -77,6 +137,10 @@ const styles = StyleSheet.create({
   messageText: {
     height: 300,
     fontSize: 16
+  },
+  activityIndicatorContainer: {
+    flex: 1,
+    justifyContent: 'center'
   },
   fab: {
     position: 'absolute',

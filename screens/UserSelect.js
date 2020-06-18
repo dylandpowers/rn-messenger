@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { View, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
-import { Appbar, Searchbar, List } from 'react-native-paper';
+import { View, StyleSheet, FlatList } from 'react-native';
+import { Appbar, Searchbar, List, ActivityIndicator } from 'react-native-paper';
 
 import { setChatRecipient } from '../redux/chatRecipient';
 import { setConversationId } from '../redux/conversation';
@@ -12,25 +12,32 @@ function UserSelect({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const { uid } = useSelector(state => state.firebase.auth);
-  const { name } = useSelector(state => state.firebase.profile);
   const dispatch = useDispatch();
   const firestore = useFirestore();
 
   const [dataHolder, setDataHolder] = useState([]); // for searching
 
   useEffect(() => {
-    firestore.collection('users')
+    firestore.collection(`users/${uid}/conversations`)
       .get()
-      .then((querySnapshot) => {
-        const fetchedUsers = [];
-        querySnapshot.forEach((querySnapshot) => {
-          if (querySnapshot.id !== uid) {
-            fetchedUsers.push(querySnapshot);
-          }
+      .then((convoQuerySnapshot) => {
+        const existingConvoUserIds = [];
+        convoQuerySnapshot.forEach((conversation) => {
+          existingConvoUserIds.push(conversation.data().otherUser.id);
         });
-        setUsers(fetchedUsers);
-        setDataHolder(fetchedUsers);
-        setIsLoading(false);
+        firestore.collection('users')
+          .get()
+          .then((querySnapshot) => {
+            const fetchedUsers = [];
+            querySnapshot.forEach((querySnapshot) => {
+              if (querySnapshot.id !== uid && !existingConvoUserIds.includes(querySnapshot.id)) {
+                fetchedUsers.push(querySnapshot);
+              }
+            });
+            setUsers(fetchedUsers);
+            setDataHolder(fetchedUsers);
+            setIsLoading(false);
+        })
       }).catch((err) => alert(err.message));
   }, []);
 
@@ -51,57 +58,12 @@ function UserSelect({ navigation }) {
   }
 
   function onSelectRecipient(recipient) {
-    createNewConversation(recipient)
-      .then((conversationId) => {
-        dispatch(setChatRecipient({
-          id: recipient.id,
-          name: recipient.data().name
-        }));
-        dispatch(setConversationId(conversationId));
-        navigation.navigate('NewMessage');
-      })
-      .catch((err) => alert(err.message));
-  }
-
-  async function createNewConversation(recipient) {
-    return new Promise((resolve, reject) => {
-      firestore.add('conversations', 
-      {
-        users: [
-          firestore.collection('users').doc(uid),
-          firestore.collection('users').doc(recipient.id)
-        ]
-      }).then(({ id }) => addConversationToUsers(id, recipient))
-      .then((id) => resolve(id))
-      .catch((err) => reject(err));
-    });
-  }
-
-  async function addConversationToUsers(id, recipient) {
-    return new Promise((resolve, reject) => {
-      Promise.all([
-        firestore.collection(`users/${uid}/conversations`)
-          .doc(id)
-          .set({
-            otherUser: {
-              id: recipient.id,
-              name: recipient.data().name
-            },
-            lastMessageText: ''
-          }),
-        firestore.collection(`users/${recipient.id}/conversations`)
-          .doc(id)
-          .set({
-            otherUser: {
-              id: uid,
-              name
-            },
-            lastMessageText: ''
-          })
-      ]).then(() => resolve(id))
-      .catch((err) => reject(err));
-    });
-
+    setIsLoading(true);
+    dispatch(setChatRecipient({
+      id: recipient.id,
+      name: recipient.data().name
+    }));
+    navigation.navigate('NewMessage');
   }
 
   return (
@@ -117,17 +79,21 @@ function UserSelect({ navigation }) {
         />
         {isLoading ? (
           <View style={styles.activityIndicatorContainer}>
-            <ActivityIndicator />
+            <ActivityIndicator style={styles.activityIndicator}/>
           </View>
-        )  : ( 
+        ) : ( 
         <FlatList
           data={users}
-          renderItem={({ item }) => 
-            <List.Item
-              title={item.data().name}
-              onPress={() => onSelectRecipient(item)} 
-            />
-          }
+          renderItem={({ item }) => {
+            const user = item.data();
+            return (
+              <List.Item
+                title={user.name}
+                description={user.email}
+                onPress={() => onSelectRecipient(item)} 
+              />
+            )
+          }}
           keyExtractor={item => item.id.toString()}
         />
         )}
@@ -148,6 +114,9 @@ const styles = StyleSheet.create({
   activityIndicatorContainer: {
     flex: 1,
     justifyContent: 'center'
+  },
+  activityIndicator: {
+    backgroundColor: '#ccccff'
   }
 });
 
