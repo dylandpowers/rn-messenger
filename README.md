@@ -1,4 +1,5 @@
 # rn-messenger
+![logo](./assets/logo.png)
 This is a simple messaging app built on React Native, Expo, and Firebase/Firestore. In this app you can chat other users also on the platform by either starting new conversations or viewing existing ones.
 
 ## UI
